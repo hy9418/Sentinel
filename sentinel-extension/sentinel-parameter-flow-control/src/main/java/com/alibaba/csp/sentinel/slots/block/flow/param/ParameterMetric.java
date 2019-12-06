@@ -25,8 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.slots.statistic.cache.CacheMap;
 import com.alibaba.csp.sentinel.slots.statistic.cache.ConcurrentLinkedHashMapWrapper;
+import com.alibaba.csp.sentinel.support.CommandWrapper;
+import com.alibaba.csp.sentinel.support.LettuceSupporter;
 import com.alibaba.csp.sentinel.support.RedisCacheMap;
-import io.lettuce.core.api.sync.RedisCommands;
 
 /**
  * Metrics for frequent ("hot spot") parameters.
@@ -55,15 +56,11 @@ public class ParameterMetric {
     private final Map<ParamFlowRule, CacheMap<Object, AtomicLong>> ruleTokenCounter =
             new HashMap<>();
     private final Map<Integer, CacheMap<Object, AtomicInteger>> threadCountMap = new HashMap<>();
-    private final RedisCommands<Object, Object> commands;
-
-    public ParameterMetric() {
-        this(null);
-    }
-
-    public ParameterMetric(RedisCommands<Object, Object> commands) {
-        this.commands = commands;
-    }
+    private final CommandWrapper ruleTimeCountersCommands =
+            LettuceSupporter.sync("ruleTimeCounters:");
+    private final CommandWrapper ruleTokenCounterCommands =
+            LettuceSupporter.sync("ruleTokenCounter:");
+    private final CommandWrapper threadCountMapCommands = LettuceSupporter.sync("threadCountMap:");
 
     /**
      * Get the token counter for given parameter rule.
@@ -105,8 +102,9 @@ public class ParameterMetric {
         if (!ruleTimeCounters.containsKey(rule)) {
             synchronized (lock) {
                 if (ruleTimeCounters.get(rule) == null) {
-                    if (commands != null) {
-                        ruleTimeCounters.put(rule, new RedisCacheMap<Object, AtomicLong>(commands));
+                    if (ruleTimeCountersCommands != null) {
+                        ruleTimeCounters.put(rule,
+                                new RedisCacheMap<Object, AtomicLong>(ruleTimeCountersCommands));
                     } else {
                         long size = Math.min(BASE_PARAM_MAX_CAPACITY * rule.getDurationInSec(),
                                 TOTAL_MAX_CAPACITY);
@@ -120,8 +118,9 @@ public class ParameterMetric {
         if (!ruleTokenCounter.containsKey(rule)) {
             synchronized (lock) {
                 if (ruleTokenCounter.get(rule) == null) {
-                    if (commands != null) {
-                        ruleTokenCounter.put(rule, new RedisCacheMap<Object, AtomicLong>(commands));
+                    if (ruleTokenCounterCommands != null) {
+                        ruleTokenCounter.put(rule,
+                                new RedisCacheMap<Object, AtomicLong>(ruleTokenCounterCommands));
                     } else {
                         long size = Math.min(BASE_PARAM_MAX_CAPACITY * rule.getDurationInSec(),
                                 TOTAL_MAX_CAPACITY);
@@ -135,9 +134,9 @@ public class ParameterMetric {
         if (!threadCountMap.containsKey(rule.getParamIdx())) {
             synchronized (lock) {
                 if (threadCountMap.get(rule.getParamIdx()) == null) {
-                    if (commands != null) {
+                    if (threadCountMapCommands != null) {
                         threadCountMap.put(rule.getParamIdx(),
-                                new RedisCacheMap<Object, AtomicInteger>(commands));
+                                new RedisCacheMap<Object, AtomicInteger>(threadCountMapCommands));
                     } else {
                         threadCountMap.put(rule.getParamIdx(),
                                 new ConcurrentLinkedHashMapWrapper<Object, AtomicInteger>(
