@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.csp.sentinel.slots.block.flow.param;
 
 import java.lang.reflect.Array;
@@ -21,10 +22,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.slots.statistic.cache.CacheMap;
 import com.alibaba.csp.sentinel.slots.statistic.cache.ConcurrentLinkedHashMapWrapper;
+import com.alibaba.csp.sentinel.support.RedisCacheMap;
+import io.lettuce.core.api.sync.RedisCommands;
 
 /**
  * Metrics for frequent ("hot spot") parameters.
@@ -37,28 +39,40 @@ public class ParameterMetric {
     private static final int THREAD_COUNT_MAX_CAPACITY = 4000;
     private static final int BASE_PARAM_MAX_CAPACITY = 4000;
     private static final int TOTAL_MAX_CAPACITY = 20_0000;
-
     private final Object lock = new Object();
-
     /**
      * Format: (rule, (value, timeRecorder))
      *
      * @since 1.6.0
      */
-    private final Map<ParamFlowRule, CacheMap<Object, AtomicLong>> ruleTimeCounters = new HashMap<>();
+    private final Map<ParamFlowRule, CacheMap<Object, AtomicLong>> ruleTimeCounters =
+            new HashMap<>();
     /**
      * Format: (rule, (value, tokenCounter))
      *
      * @since 1.6.0
      */
-    private final Map<ParamFlowRule, CacheMap<Object, AtomicLong>> ruleTokenCounter = new HashMap<>();
+    private final Map<ParamFlowRule, CacheMap<Object, AtomicLong>> ruleTokenCounter =
+            new HashMap<>();
     private final Map<Integer, CacheMap<Object, AtomicInteger>> threadCountMap = new HashMap<>();
+    private final RedisCommands<Object, Object> commands;
+
+    public ParameterMetric() {
+        this(null);
+    }
+
+    public ParameterMetric(RedisCommands<Object, Object> commands) {
+        this.commands = commands;
+    }
 
     /**
      * Get the token counter for given parameter rule.
      *
-     * @param rule valid parameter rule
+     * @param rule
+     *         valid parameter rule
+     *
      * @return the associated token counter
+     *
      * @since 1.6.0
      */
     public CacheMap<Object, AtomicLong> getRuleTokenCounter(ParamFlowRule rule) {
@@ -68,8 +82,11 @@ public class ParameterMetric {
     /**
      * Get the time record counter for given parameter rule.
      *
-     * @param rule valid parameter rule
+     * @param rule
+     *         valid parameter rule
+     *
      * @return the associated time counter
+     *
      * @since 1.6.0
      */
     public CacheMap<Object, AtomicLong> getRuleTimeCounter(ParamFlowRule rule) {
@@ -88,8 +105,14 @@ public class ParameterMetric {
         if (!ruleTimeCounters.containsKey(rule)) {
             synchronized (lock) {
                 if (ruleTimeCounters.get(rule) == null) {
-                    long size = Math.min(BASE_PARAM_MAX_CAPACITY * rule.getDurationInSec(), TOTAL_MAX_CAPACITY);
-                    ruleTimeCounters.put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(size));
+                    if (commands != null) {
+                        ruleTimeCounters.put(rule, new RedisCacheMap<Object, AtomicLong>(commands));
+                    } else {
+                        long size = Math.min(BASE_PARAM_MAX_CAPACITY * rule.getDurationInSec(),
+                                TOTAL_MAX_CAPACITY);
+                        ruleTimeCounters.put(rule,
+                                new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(size));
+                    }
                 }
             }
         }
@@ -97,8 +120,14 @@ public class ParameterMetric {
         if (!ruleTokenCounter.containsKey(rule)) {
             synchronized (lock) {
                 if (ruleTokenCounter.get(rule) == null) {
-                    long size = Math.min(BASE_PARAM_MAX_CAPACITY * rule.getDurationInSec(), TOTAL_MAX_CAPACITY);
-                    ruleTokenCounter.put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(size));
+                    if (commands != null) {
+                        ruleTokenCounter.put(rule, new RedisCacheMap<Object, AtomicLong>(commands));
+                    } else {
+                        long size = Math.min(BASE_PARAM_MAX_CAPACITY * rule.getDurationInSec(),
+                                TOTAL_MAX_CAPACITY);
+                        ruleTokenCounter.put(rule,
+                                new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(size));
+                    }
                 }
             }
         }
@@ -106,8 +135,14 @@ public class ParameterMetric {
         if (!threadCountMap.containsKey(rule.getParamIdx())) {
             synchronized (lock) {
                 if (threadCountMap.get(rule.getParamIdx()) == null) {
-                    threadCountMap.put(rule.getParamIdx(),
-                        new ConcurrentLinkedHashMapWrapper<Object, AtomicInteger>(THREAD_COUNT_MAX_CAPACITY));
+                    if (commands != null) {
+                        threadCountMap.put(rule.getParamIdx(),
+                                new RedisCacheMap<Object, AtomicInteger>(commands));
+                    } else {
+                        threadCountMap.put(rule.getParamIdx(),
+                                new ConcurrentLinkedHashMapWrapper<Object, AtomicInteger>(
+                                        THREAD_COUNT_MAX_CAPACITY));
+                    }
                 }
             }
         }
@@ -132,8 +167,9 @@ public class ParameterMetric {
                 }
                 if (Collection.class.isAssignableFrom(arg.getClass())) {
 
-                    for (Object value : ((Collection)arg)) {
-                        AtomicInteger oldValue = threadCount.putIfAbsent(value, new AtomicInteger());
+                    for (Object value : ((Collection) arg)) {
+                        AtomicInteger oldValue =
+                                threadCount.putIfAbsent(value, new AtomicInteger());
                         if (oldValue != null) {
                             int currentValue = oldValue.decrementAndGet();
                             if (currentValue <= 0) {
@@ -146,7 +182,8 @@ public class ParameterMetric {
                     int length = Array.getLength(arg);
                     for (int i = 0; i < length; i++) {
                         Object value = Array.get(arg, i);
-                        AtomicInteger oldValue = threadCount.putIfAbsent(value, new AtomicInteger());
+                        AtomicInteger oldValue =
+                                threadCount.putIfAbsent(value, new AtomicInteger());
                         if (oldValue != null) {
                             int currentValue = oldValue.decrementAndGet();
                             if (currentValue <= 0) {
@@ -192,8 +229,9 @@ public class ParameterMetric {
                 }
 
                 if (Collection.class.isAssignableFrom(arg.getClass())) {
-                    for (Object value : ((Collection)arg)) {
-                        AtomicInteger oldValue = threadCount.putIfAbsent(value, new AtomicInteger());
+                    for (Object value : ((Collection) arg)) {
+                        AtomicInteger oldValue =
+                                threadCount.putIfAbsent(value, new AtomicInteger());
                         if (oldValue != null) {
                             oldValue.incrementAndGet();
                         } else {
@@ -205,7 +243,8 @@ public class ParameterMetric {
                     int length = Array.getLength(arg);
                     for (int i = 0; i < length; i++) {
                         Object value = Array.get(arg, i);
-                        AtomicInteger oldValue = threadCount.putIfAbsent(value, new AtomicInteger());
+                        AtomicInteger oldValue =
+                                threadCount.putIfAbsent(value, new AtomicInteger());
                         if (oldValue != null) {
                             oldValue.incrementAndGet();
                         } else {

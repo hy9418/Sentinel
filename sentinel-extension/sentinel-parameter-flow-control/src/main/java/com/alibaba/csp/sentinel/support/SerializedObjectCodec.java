@@ -19,6 +19,10 @@ public class SerializedObjectCodec implements RedisCodec<Object, Object> {
 
     private byte[] prefix = null;
 
+    public SerializedObjectCodec() {
+        this(null);
+    }
+
     public SerializedObjectCodec(String keyPrefix) {
         if (keyPrefix != null) {
             try {

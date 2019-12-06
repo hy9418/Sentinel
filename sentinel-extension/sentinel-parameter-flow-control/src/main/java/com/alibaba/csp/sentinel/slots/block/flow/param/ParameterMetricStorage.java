@@ -86,7 +86,7 @@ public final class ParameterMetricStorage {
         if ((metric = metricsMap.get(resourceName)) == null) {
             synchronized (LOCK) {
                 if ((metric = metricsMap.get(resourceName)) == null) {
-                    metric = new ParameterMetric();
+                    metric = new ParameterMetric(commands);
                     metricsMap.put(resourceWrapper.getName(), metric);
                     RecordLog.info("[ParameterMetricStorage] Creating parameter metric for: "
                             + resourceWrapper.getName());
