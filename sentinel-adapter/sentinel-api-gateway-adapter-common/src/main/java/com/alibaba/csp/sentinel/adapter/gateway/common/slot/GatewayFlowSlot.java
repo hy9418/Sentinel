@@ -17,11 +17,13 @@ package com.alibaba.csp.sentinel.adapter.gateway.common.slot;
 
 import java.util.List;
 
+import com.alibaba.csp.sentinel.adapter.gateway.common.GatewayAdapterConfig;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayRuleManager;
 import com.alibaba.csp.sentinel.context.Context;
 import com.alibaba.csp.sentinel.node.DefaultNode;
 import com.alibaba.csp.sentinel.slotchain.AbstractLinkedProcessorSlot;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
+import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowChecker;
 import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowException;
@@ -35,15 +37,15 @@ import com.alibaba.csp.sentinel.slots.block.flow.param.ParameterMetricStorage;
 public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     @Override
-    public void entry(Context context, ResourceWrapper resource, DefaultNode node, int count,
-                      boolean prioritized, Object... args) throws Throwable {
+    public void entry(Context context, ResourceWrapper resource, DefaultNode node, int count, boolean prioritized,
+            Object... args) throws Throwable {
         checkGatewayParamFlow(resource, count, args);
 
         fireEntry(context, resource, node, count, prioritized, args);
     }
 
     private void checkGatewayParamFlow(ResourceWrapper resourceWrapper, int count, Object... args)
-        throws BlockException {
+            throws BlockException {
         if (args == null) {
             return;
         }
@@ -58,6 +60,33 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             ParameterMetricStorage.initParamMetricsFor(resourceWrapper, rule);
 
             if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
+
+                // 优先级
+                if (GatewayAdapterConfig.PRIORITY_ENABLE && (args.length > rules.size())) {
+                    // 启用备用规则
+                    StringResourceWrapper backUpsResource = new StringResourceWrapper(
+                            resourceWrapper.getName() + GatewayAdapterConfig.STANDBY_RESOURCE_NAME_SUFFIX,
+                            resourceWrapper.getType());
+                    List<ParamFlowRule> backUpsRules = GatewayRuleManager
+                            .getConvertedParamRules(backUpsResource.getName());
+                    if (backUpsRules == null || backUpsRules.isEmpty()) {
+                        throw new RuntimeException("BackUps rules can not be empty");
+                    }
+                    for (ParamFlowRule backUpsRule : backUpsRules) {
+                        ParameterMetricStorage.initParamMetricsFor(backUpsResource, backUpsRule);
+
+                        if (ParamFlowChecker.passCheck(backUpsResource, backUpsRule, count, args)) {
+                            return;
+                        } else {
+                            String triggeredParam = "";
+                            if (args.length > rule.getParamIdx()) {
+                                Object value = args[rule.getParamIdx()];
+                                triggeredParam = String.valueOf(value);
+                            }
+                            throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
+                        }
+                    }
+                }
                 String triggeredParam = "";
                 if (args.length > rule.getParamIdx()) {
                     Object value = args[rule.getParamIdx()];

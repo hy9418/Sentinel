@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.alibaba.csp.sentinel.adapter.gateway.common.GatewayAdapterConfig;
 import com.alibaba.csp.sentinel.adapter.gateway.common.SentinelGatewayConstants;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayFlowRule;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayParamFlowItem;
@@ -43,9 +44,10 @@ public class GatewayParamParser<T> {
     /**
      * Parse parameters for given resource from the request entity on condition of the rule predicate.
      *
-     * @param resource      valid resource name
-     * @param request       valid request
+     * @param resource valid resource name
+     * @param request valid request
      * @param rulePredicate rule predicate indicating the rules to refer
+     *
      * @return the parameter array
      */
     public Object[] parseParameterFor(String resource, T request, Predicate<GatewayFlowRule> rulePredicate) {
@@ -69,6 +71,24 @@ public class GatewayParamParser<T> {
         if (predSet.size() > 1 || predSet.contains(false)) {
             return new Object[0];
         }
+
+        if (GatewayAdapterConfig.PRIORITY_ENABLE) {
+            // 优先级启用
+            boolean hasToken = StringUtil.equalsIgnoreCase(GatewayAdapterConfig.STANDBY_REQUEST_HEADER_VALUE,
+                    requestItemParser.getHeader(request, GatewayAdapterConfig.STANDBY_REQUEST_HEADER));
+            if (hasToken) {
+                for (GatewayFlowRule ptyRule : GatewayRuleManager
+                        .getRulesForResource(resource + GatewayAdapterConfig.STANDBY_RESOURCE_NAME_SUFFIX)) {
+                    if (ptyRule.getParamItem() != null) {
+                        gatewayRules.add(ptyRule);
+                        predSet.add(rulePredicate.test(ptyRule));
+                    } else {
+                        hasNonParamRule = true;
+                    }
+                }
+            }
+        }
+
         int size = hasNonParamRule ? gatewayRules.size() + 1 : gatewayRules.size();
         Object[] arr = new Object[size];
         for (GatewayFlowRule rule : gatewayRules) {
