@@ -17,9 +17,10 @@ package com.alibaba.csp.sentinel.adapter.gateway.common.slot;
 
 import java.util.List;
 
-import com.alibaba.csp.sentinel.adapter.gateway.common.GatewayAdapterConfig;
+import com.alibaba.csp.sentinel.adapter.gateway.common.PriorityProperties;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayRuleManager;
 import com.alibaba.csp.sentinel.context.Context;
+import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.node.DefaultNode;
 import com.alibaba.csp.sentinel.slotchain.AbstractLinkedProcessorSlot;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
@@ -35,6 +36,10 @@ import com.alibaba.csp.sentinel.slots.block.flow.param.ParameterMetricStorage;
  * @since 1.6.1
  */
 public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
+
+    public GatewayFlowSlot() {
+        RecordLog.info("Init GatewayFlowSlot");
+    }
 
     @Override
     public void entry(Context context, ResourceWrapper resource, DefaultNode node, int count, boolean prioritized,
@@ -61,12 +66,11 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
             if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
 
-                // 优先级
-                if (GatewayAdapterConfig.PRIORITY_ENABLE && (args.length > rules.size())) {
+                // 优先级启用且存在备用规则标记
+                if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
                     // 启用备用规则
                     StringResourceWrapper backUpsResource = new StringResourceWrapper(
-                            resourceWrapper.getName() + GatewayAdapterConfig.STANDBY_RESOURCE_NAME_SUFFIX,
-                            resourceWrapper.getType());
+                            resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getType());
                     List<ParamFlowRule> backUpsRules = GatewayRuleManager
                             .getConvertedParamRules(backUpsResource.getName());
                     if (backUpsRules == null || backUpsRules.isEmpty()) {
@@ -74,7 +78,7 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                     }
                     for (ParamFlowRule backUpsRule : backUpsRules) {
                         ParameterMetricStorage.initParamMetricsFor(backUpsResource, backUpsRule);
-
+                        // 根据备用规则和正常规则校验方式一致，所以公用args参数
                         if (ParamFlowChecker.passCheck(backUpsResource, backUpsRule, count, args)) {
                             return;
                         } else {

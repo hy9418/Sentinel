@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.alibaba.csp.sentinel.adapter.gateway.common.GatewayAdapterConfig;
+import com.alibaba.csp.sentinel.adapter.gateway.common.PriorityProperties;
 import com.alibaba.csp.sentinel.adapter.gateway.common.SentinelGatewayConstants;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayFlowRule;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayParamFlowItem;
@@ -72,23 +72,6 @@ public class GatewayParamParser<T> {
             return new Object[0];
         }
 
-        if (GatewayAdapterConfig.PRIORITY_ENABLE) {
-            // 优先级启用
-            boolean hasToken = StringUtil.equalsIgnoreCase(GatewayAdapterConfig.STANDBY_REQUEST_HEADER_VALUE,
-                    requestItemParser.getHeader(request, GatewayAdapterConfig.STANDBY_REQUEST_HEADER));
-            if (hasToken) {
-                for (GatewayFlowRule ptyRule : GatewayRuleManager
-                        .getRulesForResource(resource + GatewayAdapterConfig.STANDBY_RESOURCE_NAME_SUFFIX)) {
-                    if (ptyRule.getParamItem() != null) {
-                        gatewayRules.add(ptyRule);
-                        predSet.add(rulePredicate.test(ptyRule));
-                    } else {
-                        hasNonParamRule = true;
-                    }
-                }
-            }
-        }
-
         int size = hasNonParamRule ? gatewayRules.size() + 1 : gatewayRules.size();
         Object[] arr = new Object[size];
         for (GatewayFlowRule rule : gatewayRules) {
@@ -99,6 +82,19 @@ public class GatewayParamParser<T> {
         }
         if (hasNonParamRule) {
             arr[size - 1] = SentinelGatewayConstants.GATEWAY_DEFAULT_PARAM;
+        }
+
+        // 优先级
+        if (PriorityProperties.ENABLE) {
+            boolean isMatch = StringUtil.equalsIgnoreCase(PriorityProperties.HEADER_VALUE,
+                    requestItemParser.getHeader(request, PriorityProperties.HEADER));
+            if (isMatch) {
+                // 放入备用规则启用标记
+                Object[] newArr = new Object[size + 1];
+                newArr[size] = PriorityProperties.RESOURCE_SUFFIX;
+                System.arraycopy(arr, 0, newArr, 0, size);
+                return newArr;
+            }
         }
         return arr;
     }
