@@ -84,7 +84,7 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
             // 启用备用规则
             StringResourceWrapper backUpsResource = new StringResourceWrapper(
-                    resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getType());
+                    resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getEntryType());
             List<ParamFlowRule> backUpsRules = GatewayRuleManager.getConvertedParamRules(backUpsResource.getName());
             if (backUpsRules == null || backUpsRules.isEmpty()) {
                 throw new RuntimeException("BackUps rules can not be empty");
