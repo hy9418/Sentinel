@@ -65,31 +65,9 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             ParameterMetricStorage.initParamMetricsFor(resourceWrapper, rule);
 
             if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
-
                 // 优先级启用且存在备用规则标记
-                if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
-                    // 启用备用规则
-                    StringResourceWrapper backUpsResource = new StringResourceWrapper(
-                            resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getType());
-                    List<ParamFlowRule> backUpsRules = GatewayRuleManager
-                            .getConvertedParamRules(backUpsResource.getName());
-                    if (backUpsRules == null || backUpsRules.isEmpty()) {
-                        throw new RuntimeException("BackUps rules can not be empty");
-                    }
-                    for (ParamFlowRule backUpsRule : backUpsRules) {
-                        ParameterMetricStorage.initParamMetricsFor(backUpsResource, backUpsRule);
-                        // 根据备用规则和正常规则校验方式一致，所以公用args参数
-                        if (ParamFlowChecker.passCheck(backUpsResource, backUpsRule, count, args)) {
-                            return;
-                        } else {
-                            String triggeredParam = "";
-                            if (args.length > rule.getParamIdx()) {
-                                Object value = args[rule.getParamIdx()];
-                                triggeredParam = String.valueOf(value);
-                            }
-                            throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
-                        }
-                    }
+                if (loadBackUpsRules(resourceWrapper, count, rule, args)) {
+                    return;
                 }
                 String triggeredParam = "";
                 if (args.length > rule.getParamIdx()) {
@@ -99,6 +77,33 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
             }
         }
+    }
+
+    private boolean loadBackUpsRules(ResourceWrapper resourceWrapper, int count, ParamFlowRule rule, Object[] args)
+            throws ParamFlowException {
+        if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
+            // 启用备用规则
+            StringResourceWrapper backUpsResource = new StringResourceWrapper(
+                    resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getType());
+            List<ParamFlowRule> backUpsRules = GatewayRuleManager.getConvertedParamRules(backUpsResource.getName());
+            if (backUpsRules == null || backUpsRules.isEmpty()) {
+                throw new RuntimeException("BackUps rules can not be empty");
+            }
+            for (ParamFlowRule backUpsRule : backUpsRules) {
+                ParameterMetricStorage.initParamMetricsFor(backUpsResource, backUpsRule);
+                // 根据备用规则和正常规则校验方式一致，所以公用args参数
+                if (!ParamFlowChecker.passCheck(backUpsResource, backUpsRule, count, args)) {
+                    String triggeredParam = "";
+                    if (args.length > rule.getParamIdx()) {
+                        Object value = args[rule.getParamIdx()];
+                        triggeredParam = String.valueOf(value);
+                    }
+                    throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
