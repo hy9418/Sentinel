@@ -17,11 +17,14 @@ package com.alibaba.csp.sentinel.adapter.gateway.common.slot;
 
 import java.util.List;
 
+import com.alibaba.csp.sentinel.adapter.gateway.common.PriorityProperties;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayRuleManager;
 import com.alibaba.csp.sentinel.context.Context;
+import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.node.DefaultNode;
 import com.alibaba.csp.sentinel.slotchain.AbstractLinkedProcessorSlot;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
+import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowChecker;
 import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowException;
@@ -34,16 +37,20 @@ import com.alibaba.csp.sentinel.slots.block.flow.param.ParameterMetricStorage;
  */
 public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
+    public GatewayFlowSlot() {
+        RecordLog.info("Init GatewayFlowSlot");
+    }
+
     @Override
-    public void entry(Context context, ResourceWrapper resource, DefaultNode node, int count,
-                      boolean prioritized, Object... args) throws Throwable {
+    public void entry(Context context, ResourceWrapper resource, DefaultNode node, int count, boolean prioritized,
+            Object... args) throws Throwable {
         checkGatewayParamFlow(resource, count, args);
 
         fireEntry(context, resource, node, count, prioritized, args);
     }
 
     private void checkGatewayParamFlow(ResourceWrapper resourceWrapper, int count, Object... args)
-        throws BlockException {
+            throws BlockException {
         if (args == null) {
             return;
         }
@@ -58,6 +65,10 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             ParameterMetricStorage.initParamMetricsFor(resourceWrapper, rule);
 
             if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
+                // 优先级启用且存在备用规则标记
+                if (loadReserve(resourceWrapper, count, rule, args)) {
+                    return;
+                }
                 String triggeredParam = "";
                 if (args.length > rule.getParamIdx()) {
                     Object value = args[rule.getParamIdx()];
@@ -66,6 +77,34 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
             }
         }
+    }
+
+    private boolean loadReserve(ResourceWrapper resourceWrapper, int count, ParamFlowRule rule, Object[] args)
+            throws ParamFlowException {
+        if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
+            // 启用备用规则
+            StringResourceWrapper reserveRs = new StringResourceWrapper(
+                    resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getEntryType());
+            RecordLog.info("Switch to reserve rules, StringResourceWrapper=[{}]", reserveRs);
+            List<ParamFlowRule> reserveRules = GatewayRuleManager.getConvertedParamRules(reserveRs.getName());
+            if (reserveRules == null || reserveRules.isEmpty()) {
+                throw new RuntimeException("Reserve rules can not be empty");
+            }
+            for (ParamFlowRule rRule : reserveRules) {
+                ParameterMetricStorage.initParamMetricsFor(reserveRs, rRule);
+                // 根据备用规则和正常规则校验方式一致，所以公用args参数
+                if (!ParamFlowChecker.passCheck(reserveRs, rRule, count, args)) {
+                    String triggeredParam = "";
+                    if (args.length > rule.getParamIdx()) {
+                        Object value = args[rule.getParamIdx()];
+                        triggeredParam = String.valueOf(value);
+                    }
+                    throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override

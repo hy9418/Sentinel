@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.alibaba.csp.sentinel.adapter.gateway.common.PriorityProperties;
 import com.alibaba.csp.sentinel.adapter.gateway.common.SentinelGatewayConstants;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayFlowRule;
 import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayParamFlowItem;
@@ -43,9 +44,10 @@ public class GatewayParamParser<T> {
     /**
      * Parse parameters for given resource from the request entity on condition of the rule predicate.
      *
-     * @param resource      valid resource name
-     * @param request       valid request
+     * @param resource valid resource name
+     * @param request valid request
      * @param rulePredicate rule predicate indicating the rules to refer
+     *
      * @return the parameter array
      */
     public Object[] parseParameterFor(String resource, T request, Predicate<GatewayFlowRule> rulePredicate) {
@@ -69,6 +71,7 @@ public class GatewayParamParser<T> {
         if (predSet.size() > 1 || predSet.contains(false)) {
             return new Object[0];
         }
+
         int size = hasNonParamRule ? gatewayRules.size() + 1 : gatewayRules.size();
         Object[] arr = new Object[size];
         for (GatewayFlowRule rule : gatewayRules) {
@@ -79,6 +82,19 @@ public class GatewayParamParser<T> {
         }
         if (hasNonParamRule) {
             arr[size - 1] = SentinelGatewayConstants.GATEWAY_DEFAULT_PARAM;
+        }
+
+        // 优先级
+        if (PriorityProperties.ENABLE) {
+            boolean isMatch = StringUtil.equalsIgnoreCase(PriorityProperties.HEADER_VALUE,
+                    requestItemParser.getHeader(request, PriorityProperties.HEADER));
+            if (isMatch) {
+                // 放入备用规则启用标记
+                Object[] newArr = new Object[size + 1];
+                newArr[size] = PriorityProperties.RESOURCE_SUFFIX;
+                System.arraycopy(arr, 0, newArr, 0, size);
+                return newArr;
+            }
         }
         return arr;
     }
