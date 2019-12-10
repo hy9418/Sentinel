@@ -66,7 +66,7 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
             if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
                 // 优先级启用且存在备用规则标记
-                if (loadBackUpsRules(resourceWrapper, count, rule, args)) {
+                if (loadReserve(resourceWrapper, count, rule, args)) {
                     return;
                 }
                 String triggeredParam = "";
@@ -79,20 +79,21 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         }
     }
 
-    private boolean loadBackUpsRules(ResourceWrapper resourceWrapper, int count, ParamFlowRule rule, Object[] args)
+    private boolean loadReserve(ResourceWrapper resourceWrapper, int count, ParamFlowRule rule, Object[] args)
             throws ParamFlowException {
         if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
             // 启用备用规则
-            StringResourceWrapper backUpsResource = new StringResourceWrapper(
+            StringResourceWrapper reserveRs = new StringResourceWrapper(
                     resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getEntryType());
-            List<ParamFlowRule> backUpsRules = GatewayRuleManager.getConvertedParamRules(backUpsResource.getName());
-            if (backUpsRules == null || backUpsRules.isEmpty()) {
-                throw new RuntimeException("BackUps rules can not be empty");
+            RecordLog.info("Switch to reserve rules, StringResourceWrapper=[{}]", reserveRs);
+            List<ParamFlowRule> reserveRules = GatewayRuleManager.getConvertedParamRules(reserveRs.getName());
+            if (reserveRules == null || reserveRules.isEmpty()) {
+                throw new RuntimeException("Reserve rules can not be empty");
             }
-            for (ParamFlowRule backUpsRule : backUpsRules) {
-                ParameterMetricStorage.initParamMetricsFor(backUpsResource, backUpsRule);
+            for (ParamFlowRule rRule : reserveRules) {
+                ParameterMetricStorage.initParamMetricsFor(reserveRs, rRule);
                 // 根据备用规则和正常规则校验方式一致，所以公用args参数
-                if (!ParamFlowChecker.passCheck(backUpsResource, backUpsRule, count, args)) {
+                if (!ParamFlowChecker.passCheck(reserveRs, rRule, count, args)) {
                     String triggeredParam = "";
                     if (args.length > rule.getParamIdx()) {
                         Object value = args[rule.getParamIdx()];
