@@ -207,7 +207,7 @@ public class ParamFlowRuleController {
         }
         ParamFlowRuleEntity oldEntity = repository.findById(id);
         if (oldEntity == null) {
-            return Result.ofFail(-1, "id " + id + " does not exist");
+            return Result.ofFail(-1, "id " + id + " does not exists");
         }
         authUser.authTarget(oldEntity.getApp(), PrivilegeType.WRITE_RULE);
         Result<ParamFlowRuleEntity> checkResult = checkEntityInternal(entity);

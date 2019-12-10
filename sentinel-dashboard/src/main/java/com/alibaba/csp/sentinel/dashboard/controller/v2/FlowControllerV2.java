@@ -175,7 +175,7 @@ public class FlowControllerV2 {
         }
         FlowRuleEntity oldEntity = repository.findById(id);
         if (oldEntity == null) {
-            return Result.ofFail(-1, "id " + id + " does not exist");
+            return Result.ofFail(-1, "id " + id + " does not exists");
         }
         if (entity == null) {
             return Result.ofFail(-1, "invalid body");

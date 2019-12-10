@@ -178,7 +178,7 @@ public class FlowControllerV1 {
         }
         FlowRuleEntity entity = repository.findById(id);
         if (entity == null) {
-            return Result.ofFail(-1, "id " + id + " dose not exist");
+            return Result.ofFail(-1, "id " + id + " dose not exists");
         }
         if (StringUtil.isNotBlank(app)) {
             entity.setApp(app.trim());
