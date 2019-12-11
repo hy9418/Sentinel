@@ -86,14 +86,13 @@ public class GatewayParamParser<T> {
 
         // 优先级
         if (PriorityProperties.ENABLE) {
-            boolean isMatch = StringUtil.equalsIgnoreCase(PriorityProperties.HEADER_VALUE,
-                    requestItemParser.getHeader(request, PriorityProperties.HEADER));
-            if (isMatch) {
+            boolean isVip = (null != requestItemParser.getHeader(request, PriorityProperties.VIP_HEADER));
+            if (isVip) {
                 // 放入备用规则启用标记
                 Object[] newArr = new Object[size + 1];
-                newArr[size] = PriorityProperties.RESOURCE_SUFFIX;
                 System.arraycopy(arr, 0, newArr, 0, size);
-                return newArr;
+                newArr[size] = PriorityProperties.GATEWAY_VIP_PARAM;
+                arr = newArr;
             }
         }
         return arr;
