@@ -19,7 +19,6 @@ package com.alibaba.csp.sentinel.slots.block.flow.param;
 import java.util.Arrays;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.slots.statistic.cache.CacheMap;
-import com.alibaba.csp.sentinel.support.AtomicWrapper;
 import org.junit.Test;
 import org.redisson.api.RAtomicLong;
 
@@ -158,7 +157,7 @@ public class ParameterMetricTest {
         threadCountMap = metric.getThreadCountMap().get(rule.getParamIdx());
         assertEquals(v.length, threadCountMap.size());
         for (long vs : v) {
-            assertEquals(1, ((AtomicWrapper) threadCountMap.get(vs)).get());
+            assertEquals(1, threadCountMap.get(vs).get());
         }
 
         switch (paramType) {

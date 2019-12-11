@@ -100,11 +100,11 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
-                        "testParamFlowDefaultCheckSingleQps:ruleTimeCounter")));
+                .put(rule, new RedisCacheMap<>(
+                        RdSupporter.path("testParamFlowDefaultCheckSingleQps:ruleTimeCounter")));
         metric.getRuleTokenCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
-                        "testParamFlowDefaultCheckSingleQps:ruleTokenCounter")));
+                .put(rule, new RedisCacheMap<>(
+                        RdSupporter.path("testParamFlowDefaultCheckSingleQps:ruleTokenCounter")));
 
         // We mock the time directly to avoid unstable behaviour.
         setCurrentMillis(System.currentTimeMillis());
@@ -276,14 +276,16 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
                 .put(rule, new RedisCacheMap<>(RdSupporter.path(
-                        "testParamFlowDefaultCheckSingleValueCheckQpsMultipleThreads:ruleTimeCounter")));
+                        "testParamFlowDefaultCheckSingleValueCheckQpsMultipleThreads"
+                                + ":ruleTimeCounter:")));
         metric.getRuleTokenCounterMap()
                 .put(rule, new RedisCacheMap<>(RdSupporter.path(
                         "testParamFlowDefaultCheckSingleValueCheckQpsMultipleThreads"
-                                + ":ruleTokenCounter")));
+                                + ":ruleTokenCounter:")));
         int threadCount = 40;
 
         final CountDownLatch waitLatch = new CountDownLatch(threadCount);
+
         final AtomicInteger successCount = new AtomicInteger();
         for (int i = 0; i < threadCount; i++) {
             Thread t = new Thread(new Runnable() {
