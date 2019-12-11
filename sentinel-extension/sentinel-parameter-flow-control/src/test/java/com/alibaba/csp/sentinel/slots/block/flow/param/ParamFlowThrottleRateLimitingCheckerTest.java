@@ -24,7 +24,7 @@ import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
-import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisSupporter;
 import com.alibaba.csp.sentinel.support.RedisCacheMap;
 import com.alibaba.csp.sentinel.util.TimeUtil;
 import org.junit.After;
@@ -60,7 +60,7 @@ public class ParamFlowThrottleRateLimitingCheckerTest {
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
                 .put(rule, new RedisCacheMap<>(
-                        RdSupporter.path("testSingleValueThrottleCheckQps:ruleTimeCounter")));
+                        RedisSupporter.path("testSingleValueThrottleCheckQps:ruleTimeCounter")));
 
         long currentTime = TimeUtil.currentTimeMillis();
         long endTime = currentTime + rule.getDurationInSec() * 1000;
@@ -105,7 +105,7 @@ public class ParamFlowThrottleRateLimitingCheckerTest {
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testSingleValueThrottleCheckQpsMultipleThreads:ruleTimeCounter")));
 
         int threadCount = 40;

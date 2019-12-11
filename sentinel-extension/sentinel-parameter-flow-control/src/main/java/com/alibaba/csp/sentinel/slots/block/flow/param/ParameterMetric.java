@@ -23,8 +23,9 @@ import java.util.Map;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.slots.statistic.cache.CacheMap;
 import com.alibaba.csp.sentinel.support.CommandResource;
-import com.alibaba.csp.sentinel.support.RdSupporter;
 import com.alibaba.csp.sentinel.support.RedisCacheMap;
+import com.alibaba.csp.sentinel.support.RedisSupporter;
+import com.alibaba.csp.sentinel.util.AssertUtil;
 import org.redisson.api.RAtomicLong;
 
 /**
@@ -38,9 +39,6 @@ public class ParameterMetric {
     private static final String PATH_RULE_TIME_COUNTERS = "ruleTimeCounters:";
     private static final String PATH_RULE_TOKEN_COUNTER = "ruleTokenCounter:";
     private static final String PATH_THREAD_COUNT_MAP = "threadCountMap:";
-    private static final int THREAD_COUNT_MAX_CAPACITY = 4000;
-    private static final int BASE_PARAM_MAX_CAPACITY = 4000;
-    private static final int TOTAL_MAX_CAPACITY = 20_0000;
     private final Object lock = new Object();
     /**
      * Format: (rule, (value, timeRecorder))
@@ -57,12 +55,21 @@ public class ParameterMetric {
     private final Map<ParamFlowRule, CacheMap<Object, RAtomicLong>> ruleTokenCounter =
             new HashMap<>();
     private final Map<Integer, CacheMap<Object, RAtomicLong>> threadCountMap = new HashMap<>();
-    private final CommandResource ruleTimeCountersCommands =
-            RdSupporter.path(PATH_RULE_TIME_COUNTERS);
-    private final CommandResource ruleTokenCounterCommands =
-            RdSupporter.path(PATH_RULE_TOKEN_COUNTER);
-    private final CommandResource threadCountMapCommands =
-            RdSupporter.path(PATH_THREAD_COUNT_MAP);
+    private final CommandResource ruleTimeCountersCommands;
+    private final CommandResource ruleTokenCounterCommands;
+    private final CommandResource threadCountMapCommands;
+
+    public ParameterMetric() {
+        this("$default");
+    }
+
+    public ParameterMetric(String resourceName) {
+        AssertUtil.notEmpty(resourceName, "The resourcePath can not be empty");
+        String resourcePath = resourceName + ':';
+        ruleTimeCountersCommands = RedisSupporter.path(PATH_RULE_TIME_COUNTERS + resourcePath);
+        ruleTokenCounterCommands = RedisSupporter.path(PATH_RULE_TOKEN_COUNTER + resourcePath);
+        threadCountMapCommands = RedisSupporter.path(PATH_THREAD_COUNT_MAP + resourcePath);
+    }
 
     /**
      * Get the token counter for given parameter rule.
@@ -104,7 +111,7 @@ public class ParameterMetric {
         if (!ruleTimeCounters.containsKey(rule)) {
             synchronized (lock) {
                 if (ruleTimeCounters.get(rule) == null) {
-                    ruleTimeCounters.put(rule, new RedisCacheMap<Object>(ruleTimeCountersCommands));
+                    ruleTimeCounters.put(rule, new RedisCacheMap<>(ruleTimeCountersCommands));
                 }
             }
         }
@@ -112,7 +119,7 @@ public class ParameterMetric {
         if (!ruleTokenCounter.containsKey(rule)) {
             synchronized (lock) {
                 if (ruleTokenCounter.get(rule) == null) {
-                    ruleTokenCounter.put(rule, new RedisCacheMap<Object>(ruleTokenCounterCommands));
+                    ruleTokenCounter.put(rule, new RedisCacheMap<>(ruleTokenCounterCommands));
                 }
 
             }
@@ -122,7 +129,7 @@ public class ParameterMetric {
             synchronized (lock) {
                 if (threadCountMap.get(rule.getParamIdx()) == null) {
                     threadCountMap.put(rule.getParamIdx(),
-                            new RedisCacheMap<Object>(threadCountMapCommands));
+                            new RedisCacheMap<>(threadCountMapCommands));
                 }
             }
         }

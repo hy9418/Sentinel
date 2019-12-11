@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
-import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisSupporter;
 import com.alibaba.csp.sentinel.support.RedisCacheMap;
 import com.alibaba.csp.sentinel.test.AbstractTimeBasedTest;
 import com.alibaba.csp.sentinel.util.TimeUtil;
@@ -58,10 +58,10 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testCheckQpsWithLongIntervalAndHighThreshold:ruleTimeCounter")));
         metric.getRuleTokenCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testCheckQpsWithLongIntervalAndHighThreshold:ruleTokenCounter")));
 
         // We mock the time directly to avoid unstable behaviour.
@@ -101,10 +101,10 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
                 .put(rule, new RedisCacheMap<>(
-                        RdSupporter.path("testParamFlowDefaultCheckSingleQps:ruleTimeCounter")));
+                        RedisSupporter.path("testParamFlowDefaultCheckSingleQps:ruleTimeCounter")));
         metric.getRuleTokenCounterMap()
                 .put(rule, new RedisCacheMap<>(
-                        RdSupporter.path("testParamFlowDefaultCheckSingleQps:ruleTokenCounter")));
+                        RedisSupporter.path("testParamFlowDefaultCheckSingleQps:ruleTokenCounter")));
 
         // We mock the time directly to avoid unstable behaviour.
         setCurrentMillis(System.currentTimeMillis());
@@ -144,10 +144,10 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testParamFlowDefaultCheckSingleQpsWithBurst:ruleTimeCounter")));
         metric.getRuleTokenCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testParamFlowDefaultCheckSingleQpsWithBurst:ruleTokenCounter")));
 
         // We mock the time directly to avoid unstable behaviour.
@@ -218,10 +218,10 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testParamFlowDefaultCheckQpsInDifferentDuration:ruleTimeCounter")));
         metric.getRuleTokenCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testParamFlowDefaultCheckQpsInDifferentDuration:ruleTokenCounter")));
 
         // We mock the time directly to avoid unstable behaviour.
@@ -275,11 +275,11 @@ public class ParamFlowDefaultCheckerTest extends AbstractTimeBasedTest {
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
         metric.getRuleTimeCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testParamFlowDefaultCheckSingleValueCheckQpsMultipleThreads"
                                 + ":ruleTimeCounter:")));
         metric.getRuleTokenCounterMap()
-                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                .put(rule, new RedisCacheMap<>(RedisSupporter.path(
                         "testParamFlowDefaultCheckSingleValueCheckQpsMultipleThreads"
                                 + ":ruleTokenCounter:")));
         int threadCount = 40;

@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
-import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisSupporter;
 import com.alibaba.csp.sentinel.util.StringUtil;
 
 /**
@@ -36,7 +36,7 @@ public final class ParameterMetricStorage {
     private static final Object LOCK = new Object();
 
     static {
-        RdSupporter.initialize();
+        RedisSupporter.initialize();
     }
 
     private ParameterMetricStorage() {
@@ -49,6 +49,7 @@ public final class ParameterMetricStorage {
      * @param resourceWrapper
      *         resource to init
      * @param rule
+     *         lettuce /redisson
      *         relevant rule
      */
     public static void initParamMetricsFor(ResourceWrapper resourceWrapper, /*@Valid*/
@@ -62,7 +63,7 @@ public final class ParameterMetricStorage {
         if ((metric = metricsMap.get(resourceName)) == null) {
             synchronized (LOCK) {
                 if ((metric = metricsMap.get(resourceName)) == null) {
-                    metric = new ParameterMetric();
+                    metric = new ParameterMetric(resourceName);
                     metricsMap.put(resourceWrapper.getName(), metric);
                     RecordLog.info("[ParameterMetricStorage] Creating parameter metric for: "
                             + resourceWrapper.getName());

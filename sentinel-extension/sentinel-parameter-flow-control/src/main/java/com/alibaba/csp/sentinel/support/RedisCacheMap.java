@@ -22,25 +22,16 @@ public class RedisCacheMap<T> implements CacheMap<T, RAtomicLong> {
 
     @Override
     public boolean containsKey(T key) {
-        // if (PrimitiveWrapper.needResolve(key.getClass())) {
-        //     key = (T) PrimitiveWrapper.resolveWrapper(key);
-        // }
         return commandResource.exists(key) == 1;
     }
 
     @Override
     public RAtomicLong get(T key) {
-        // if (PrimitiveWrapper.needResolve(key.getClass())) {
-        //     key = (T) PrimitiveWrapper.resolveWrapper(key);
-        // }
         return commandResource.getOrNewAtomicLong(key.toString());
     }
 
     @Override
     public RAtomicLong remove(T key) {
-        // if (PrimitiveWrapper.needResolve(key.getClass())) {
-        //     key = (T) PrimitiveWrapper.resolveWrapper(key);
-        // }
         commandResource.del(key);
         //useless return
         return null;
@@ -48,11 +39,7 @@ public class RedisCacheMap<T> implements CacheMap<T, RAtomicLong> {
 
     @Override
     public RAtomicLong put(T key, RAtomicLong value) {
-        // if (PrimitiveWrapper.needResolve(key.getClass())) {
-        //     key = (T) PrimitiveWrapper.resolveWrapper(key);
-        // }
         if (value != null) {
-            // commandResource.getOrNewAtomicLong(key).set(value.get());
             commandResource.set(key, value);
         }
         return value;
@@ -60,9 +47,6 @@ public class RedisCacheMap<T> implements CacheMap<T, RAtomicLong> {
 
     @Override
     public RAtomicLong putIfAbsent(T key, RAtomicLong value) {
-        // if (PrimitiveWrapper.needResolve(key.getClass())) {
-        //     key = (T) PrimitiveWrapper.resolveWrapper(key);
-        // }
         if (value != null) {
             return commandResource.putIfAbsent(key.toString(), value);
         }

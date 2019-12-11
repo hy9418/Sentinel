@@ -15,35 +15,55 @@ import org.redisson.misc.URIBuilder;
  * @version $Id$
  * @since 2019/12/6 11:45
  */
-public class RdSupporter {
+public class RedisSupporter {
 
     private static final String REDIS_COMMAND_PREFIX = "rap-cloud-gateway:";
     private static final String REDIS_SERVER = "rap.redis.server";
     private static final String REDIS_AUTH = "rap.redis.auth.password";
+    private static final String AHAS_NAMESPACE = "ahas.namespace";
+    private static final String PROJECT_NAME = "project.name";
+    private static final String DEFAULT_PROJECT_NAME_GATEWAY = "rap-cloud-gateway";
+    private static final String RAP_PROFILE = "rap.profile";
     private static final Map<String, CommandResource> COMMANDS_CACHE = new HashMap<>();
     private static final String REDIS_PROTOCOL = "redis://";
     private static AtomicBoolean init = new AtomicBoolean(false);
     private static RedissonClient redissonClient;
+    private static String commandPrefix;
 
     public static CommandResource path(String path) {
-        if (!init.get()) {
-            initialize();
-        }
         if (redissonClient == null) {
-            return null;
+            if (!init.get()) {
+                initialize();
+            }
+            if (redissonClient == null) {
+                return null;
+            }
         }
-        String prefix = REDIS_COMMAND_PREFIX;
-        if (path != null && !"".equals(path)) {
+        String prefix = commandPrefix;
+        if (path != null && !path.isEmpty()) {
             prefix += path;
         }
         if (COMMANDS_CACHE.get(prefix) == null) {
-            synchronized (RdSupporter.class) {
+            synchronized (RedisSupporter.class) {
                 if (COMMANDS_CACHE.get(prefix) == null) {
                     COMMANDS_CACHE.put(prefix, new CommandResource(prefix, redissonClient));
                 }
             }
         }
         return COMMANDS_CACHE.get(prefix);
+    }
+
+    private static void prefix() {
+        String prefix = REDIS_COMMAND_PREFIX;
+        String namespace = System.getProperty(AHAS_NAMESPACE, System.getProperty(RAP_PROFILE));
+        if (namespace != null && !namespace.isEmpty()) {
+            prefix += namespace + ':';
+        }
+        String projectName = System.getProperty(PROJECT_NAME, DEFAULT_PROJECT_NAME_GATEWAY);
+        if (!projectName.isEmpty()) {
+            prefix += projectName + ':';
+        }
+        commandPrefix = prefix;
     }
 
     public static synchronized void initialize() {
@@ -61,6 +81,7 @@ public class RdSupporter {
                 singleServerConfig.setPassword(password);
             }
             redissonClient = Redisson.create(config);
+            prefix();
         }
     }
 

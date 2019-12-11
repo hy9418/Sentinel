@@ -22,7 +22,7 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.statistic.cache.CacheMap;
 import com.alibaba.csp.sentinel.support.CommandResource;
-import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisSupporter;
 import com.alibaba.csp.sentinel.support.RedisCacheMap;
 import com.alibaba.csp.sentinel.util.TimeUtil;
 import org.junit.After;
@@ -92,8 +92,8 @@ public class ParamFlowSlotTest {
 
         ParameterMetric metric = mock(ParameterMetric.class);
 
-        CommandResource command1 = RdSupporter.path("map");
-        CommandResource command2 = RdSupporter.path("map2");
+        CommandResource command1 = RedisSupporter.path("map");
+        CommandResource command2 = RedisSupporter.path("map2");
         CacheMap<Object, RAtomicLong> map = new RedisCacheMap<>(command1);
         CacheMap<Object, RAtomicLong> map2 = new RedisCacheMap<>(command2);
         when(metric.getRuleTimeCounter(rule)).thenReturn(map);
