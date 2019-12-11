@@ -132,7 +132,7 @@ public class ClusterConfigService {
             .map(e -> e.getIp() + '@' + e.getPort())
             .anyMatch(e -> e.equals(machineId));
         if (!machineOk) {
-            return AsyncUtils.newFailedFuture(new IllegalStateException("machine does not exist or disconnected"));
+            return AsyncUtils.newFailedFuture(new IllegalStateException("machine does not exists or disconnected"));
         }
 
         return getClusterUniversalState(app)

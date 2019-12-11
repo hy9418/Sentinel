@@ -13,31 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.csp.sentinel.slots.block.flow.param;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+package com.alibaba.csp.sentinel.slots.block.flow.param;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
-import com.alibaba.csp.sentinel.slots.statistic.cache.ConcurrentLinkedHashMapWrapper;
+import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisCacheMap;
 import com.alibaba.csp.sentinel.util.TimeUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test cases for {@link ParamFlowChecker}.
@@ -49,7 +48,8 @@ public class ParamFlowCheckerTest {
     @Test
     public void testHotParamCheckerPassCheckExceedArgs() {
         final String resourceName = "testHotParamCheckerPassCheckExceedArgs";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         int paramIdx = 1;
 
         ParamFlowRule rule = new ParamFlowRule();
@@ -58,13 +58,14 @@ public class ParamFlowCheckerTest {
         rule.setParamIdx(paramIdx);
 
         assertTrue("The rule will pass if the paramIdx exceeds provided args",
-            ParamFlowChecker.passCheck(resourceWrapper, rule, 1, "abc"));
+                ParamFlowChecker.passCheck(resourceWrapper, rule, 1, "abc"));
     }
 
     @Test
     public void testSingleValueCheckQpsWithExceptionItems() throws InterruptedException {
         final String resourceName = "testSingleValueCheckQpsWithExceptionItems";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         TimeUtil.currentTimeMillis();
         int paramIdx = 0;
 
@@ -91,7 +92,9 @@ public class ParamFlowCheckerTest {
 
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
-        metric.getRuleTimeCounterMap().put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(4000));
+        metric.getRuleTimeCounterMap()
+                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                        "testSingleValueCheckQpsWithExceptionItems:ruleTimeCounter")));
 
         assertTrue(ParamFlowChecker.passSingleValueCheck(resourceWrapper, rule, 1, valueA));
         assertFalse(ParamFlowChecker.passSingleValueCheck(resourceWrapper, rule, 1, valueB));
@@ -101,15 +104,17 @@ public class ParamFlowCheckerTest {
     @Test
     public void testSingleValueCheckThreadCountWithExceptionItems() {
         final String resourceName = "testSingleValueCheckThreadCountWithExceptionItems";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         int paramIdx = 0;
 
         long globalThreshold = 5L;
         int thresholdB = 3;
         int thresholdD = 7;
 
-        ParamFlowRule rule = new ParamFlowRule(resourceName).setCount(globalThreshold).setParamIdx(paramIdx)
-            .setGrade(RuleConstant.FLOW_GRADE_THREAD);
+        ParamFlowRule rule = new ParamFlowRule(resourceName).setCount(globalThreshold)
+                .setParamIdx(paramIdx)
+                .setGrade(RuleConstant.FLOW_GRADE_THREAD);
 
         String valueA = "valueA";
         String valueB = "valueB";
@@ -137,7 +142,8 @@ public class ParamFlowCheckerTest {
         when(metric.getThreadCount(paramIdx, valueA)).thenReturn(globalThreshold);
         when(metric.getThreadCount(paramIdx, valueB)).thenReturn(thresholdB - 1L);
         when(metric.getThreadCount(paramIdx, valueC)).thenReturn(globalThreshold + 1);
-        when(metric.getThreadCount(paramIdx, valueD)).thenReturn(globalThreshold - 1).thenReturn((long)thresholdD);
+        when(metric.getThreadCount(paramIdx, valueD)).thenReturn(globalThreshold - 1)
+                .thenReturn((long) thresholdD);
 
         assertFalse(ParamFlowChecker.passSingleValueCheck(resourceWrapper, rule, 1, valueA));
         assertTrue(ParamFlowChecker.passSingleValueCheck(resourceWrapper, rule, 1, valueB));
@@ -149,18 +155,24 @@ public class ParamFlowCheckerTest {
     @Test
     public void testPassLocalCheckForCollection() throws InterruptedException {
         final String resourceName = "testPassLocalCheckForCollection";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         int paramIdx = 0;
         double globalThreshold = 1;
 
-        ParamFlowRule rule = new ParamFlowRule(resourceName).setParamIdx(paramIdx).setCount(globalThreshold);
+        ParamFlowRule rule =
+                new ParamFlowRule(resourceName).setParamIdx(paramIdx).setCount(globalThreshold);
 
         String v1 = "a", v2 = "B", v3 = "Cc";
         List<String> list = Arrays.asList(v1, v2, v3);
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
-        metric.getRuleTimeCounterMap().put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(4000));
-        metric.getRuleTokenCounterMap().put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(4000));
+        metric.getRuleTimeCounterMap()
+                .put(rule, new RedisCacheMap<>(
+                        RdSupporter.path("testPassLocalCheckForCollection:ruleTimeCounter")));
+        metric.getRuleTokenCounterMap()
+                .put(rule, new RedisCacheMap<>(
+                        RdSupporter.path("testPassLocalCheckForCollection:ruleTokenCounter")));
 
         assertTrue(ParamFlowChecker.passCheck(resourceWrapper, rule, 1, list));
         assertFalse(ParamFlowChecker.passCheck(resourceWrapper, rule, 1, list));
@@ -169,20 +181,24 @@ public class ParamFlowCheckerTest {
     @Test
     public void testPassLocalCheckForArray() throws InterruptedException {
         final String resourceName = "testPassLocalCheckForArray";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         int paramIdx = 0;
         double globalThreshold = 1;
 
         ParamFlowRule rule = new ParamFlowRule(resourceName).setParamIdx(paramIdx)
-            .setControlBehavior(RuleConstant.CONTROL_BEHAVIOR_RATE_LIMITER).setCount(globalThreshold);
+                .setControlBehavior(RuleConstant.CONTROL_BEHAVIOR_RATE_LIMITER)
+                .setCount(globalThreshold);
 
         TimeUtil.currentTimeMillis();
 
         String v1 = "a", v2 = "B", v3 = "Cc";
-        Object arr = new String[] {v1, v2, v3};
+        Object arr = new String[] { v1, v2, v3 };
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
-        metric.getRuleTimeCounterMap().put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(4000));
+        metric.getRuleTimeCounterMap()
+                .put(rule, new RedisCacheMap<>(
+                        RdSupporter.path("testPassLocalCheckForArray:ruleTimeCounter")));
 
         assertTrue(ParamFlowChecker.passCheck(resourceWrapper, rule, 1, arr));
         assertFalse(ParamFlowChecker.passCheck(resourceWrapper, rule, 1, arr));

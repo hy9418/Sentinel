@@ -157,7 +157,7 @@ public class DegradeController {
         }
         DegradeRuleEntity entity = repository.findById(id);
         if (entity == null) {
-            return Result.ofFail(-1, "id " + id + " dose not exist");
+            return Result.ofFail(-1, "id " + id + " dose not exists");
         }
         authUser.authTarget(entity.getApp(), PrivilegeType.WRITE_RULE);
         if (StringUtil.isNotBlank(app)) {

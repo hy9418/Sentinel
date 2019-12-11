@@ -275,7 +275,7 @@ public class GatewayFlowRuleController {
 
         GatewayFlowRuleEntity entity = repository.findById(id);
         if (entity == null) {
-            return Result.ofFail(-1, "gateway flow rule does not exist, id=" + id);
+            return Result.ofFail(-1, "gateway flow rule does not exists, id=" + id);
         }
 
         // 针对请求属性

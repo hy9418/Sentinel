@@ -89,9 +89,9 @@ public class ClusterMetric {
     private boolean canOccupy(ClusterFlowEvent event, int acquireCount, double latestQps, double threshold) {
         long headPass = metric.getFirstCountOfWindow(event);
         long occupiedCount = metric.getOccupiedCount(event);
-        //  bucket to occupy (= incoming bucket)
+        //  path to occupy (= incoming path)
         //       ↓
-        // | head bucket |    |    |    | current bucket |
+        // | head path |    |    |    | current path |
         // +-------------+----+----+----+----------- ----+
         //   (headPass)
         return latestQps + (acquireCount + occupiedCount) - headPass <= threshold;

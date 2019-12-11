@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.csp.sentinel.slots.block.flow.param;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
-import com.alibaba.csp.sentinel.slots.statistic.cache.ConcurrentLinkedHashMapWrapper;
+import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisCacheMap;
 import com.alibaba.csp.sentinel.util.TimeUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,7 +42,8 @@ public class ParamFlowThrottleRateLimitingCheckerTest {
     @Test
     public void testSingleValueThrottleCheckQps() throws Exception {
         final String resourceName = "testSingleValueThrottleCheckQps";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         int paramIdx = 0;
         TimeUtil.currentTimeMillis();
 
@@ -57,7 +58,9 @@ public class ParamFlowThrottleRateLimitingCheckerTest {
         String valueA = "valueA";
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
-        metric.getRuleTimeCounterMap().put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(4000));
+        metric.getRuleTimeCounterMap()
+                .put(rule, new RedisCacheMap<>(
+                        RdSupporter.path("testSingleValueThrottleCheckQps:ruleTimeCounter")));
 
         long currentTime = TimeUtil.currentTimeMillis();
         long endTime = currentTime + rule.getDurationInSec() * 1000;
@@ -88,20 +91,22 @@ public class ParamFlowThrottleRateLimitingCheckerTest {
     @Test
     public void testSingleValueThrottleCheckQpsMultipleThreads() throws Exception {
         final String resourceName = "testSingleValueThrottleCheckQpsMultipleThreads";
-        final ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
+        final ResourceWrapper resourceWrapper =
+                new StringResourceWrapper(resourceName, EntryType.IN);
         int paramIdx = 0;
 
         long threshold = 5L;
 
-        final ParamFlowRule rule = new ParamFlowRule(resourceName)
-            .setCount(threshold)
-            .setParamIdx(paramIdx)
-            .setControlBehavior(RuleConstant.CONTROL_BEHAVIOR_RATE_LIMITER);
+        final ParamFlowRule rule = new ParamFlowRule(resourceName).setCount(threshold)
+                .setParamIdx(paramIdx)
+                .setControlBehavior(RuleConstant.CONTROL_BEHAVIOR_RATE_LIMITER);
 
         final String valueA = "valueA";
         ParameterMetric metric = new ParameterMetric();
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);
-        metric.getRuleTimeCounterMap().put(rule, new ConcurrentLinkedHashMapWrapper<Object, AtomicLong>(4000));
+        metric.getRuleTimeCounterMap()
+                .put(rule, new RedisCacheMap<>(RdSupporter.path(
+                        "testSingleValueThrottleCheckQpsMultipleThreads:ruleTimeCounter")));
 
         int threadCount = 40;
         System.out.println(metric.getRuleTimeCounter(rule));
@@ -141,7 +146,8 @@ public class ParamFlowThrottleRateLimitingCheckerTest {
                 public void run() {
                     long currentTime1 = currentTime;
                     while (currentTime1 <= endTime) {
-                        if (ParamFlowChecker.passSingleValueCheck(resourceWrapper, rule, 1, valueA)) {
+                        if (ParamFlowChecker.passSingleValueCheck(resourceWrapper, rule, 1,
+                                valueA)) {
                             successCount.incrementAndGet();
                         }
 

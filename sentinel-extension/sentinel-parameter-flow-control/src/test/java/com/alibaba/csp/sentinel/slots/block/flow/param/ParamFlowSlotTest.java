@@ -13,30 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.csp.sentinel.slots.block.flow.param;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
 import com.alibaba.csp.sentinel.slots.statistic.cache.CacheMap;
-import com.alibaba.csp.sentinel.slots.statistic.cache.ConcurrentLinkedHashMapWrapper;
+import com.alibaba.csp.sentinel.support.CommandResource;
+import com.alibaba.csp.sentinel.support.RdSupporter;
+import com.alibaba.csp.sentinel.support.RedisCacheMap;
 import com.alibaba.csp.sentinel.util.TimeUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.redisson.api.RAtomicLong;
+
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test cases for {@link ParamFlowSlot}.
@@ -52,9 +49,7 @@ public class ParamFlowSlotTest {
     public void testNegativeParamIdx() throws Throwable {
         String resourceName = "testNegativeParamIdx";
         ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
-        ParamFlowRule rule = new ParamFlowRule(resourceName)
-            .setCount(1)
-            .setParamIdx(-1);
+        ParamFlowRule rule = new ParamFlowRule(resourceName).setCount(1).setParamIdx(-1);
         ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
         paramFlowSlot.entry(null, resourceWrapper, null, 1, false, "abc", "def", "ghi");
         assertEquals(2, rule.getParamIdx().longValue());
@@ -91,19 +86,19 @@ public class ParamFlowSlotTest {
         ResourceWrapper resourceWrapper = new StringResourceWrapper(resourceName, EntryType.IN);
         long argToGo = 1L;
         double count = 1;
-        ParamFlowRule rule = new ParamFlowRule(resourceName)
-            .setCount(count)
-            .setBurstCount(0)
-            .setParamIdx(0);
+        ParamFlowRule rule =
+                new ParamFlowRule(resourceName).setCount(count).setBurstCount(0).setParamIdx(0);
         ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
 
         ParameterMetric metric = mock(ParameterMetric.class);
 
-        CacheMap<Object, AtomicLong> map = new ConcurrentLinkedHashMapWrapper<>(4000);
-        CacheMap<Object, AtomicLong> map2 = new ConcurrentLinkedHashMapWrapper<>(4000);
+        CommandResource command1 = RdSupporter.path("map");
+        CommandResource command2 = RdSupporter.path("map2");
+        CacheMap<Object, RAtomicLong> map = new RedisCacheMap<>(command1);
+        CacheMap<Object, RAtomicLong> map2 = new RedisCacheMap<>(command2);
         when(metric.getRuleTimeCounter(rule)).thenReturn(map);
         when(metric.getRuleTokenCounter(rule)).thenReturn(map2);
-        map.put(argToGo, new AtomicLong(TimeUtil.currentTimeMillis()));
+        command1.getOrNewAtomicLong(argToGo).set(TimeUtil.currentTimeMillis());
 
         // Insert the mock metric to control pass or block.
         ParameterMetricStorage.getMetricsMap().put(resourceWrapper.getName(), metric);

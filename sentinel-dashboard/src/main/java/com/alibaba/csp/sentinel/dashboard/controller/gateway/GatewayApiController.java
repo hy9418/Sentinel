@@ -186,7 +186,7 @@ public class GatewayApiController {
 
         ApiDefinitionEntity entity = repository.findById(id);
         if (entity == null) {
-            return Result.ofFail(-1, "api does not exist, id=" + id);
+            return Result.ofFail(-1, "api does not exists, id=" + id);
         }
 
         // 匹配规则列表

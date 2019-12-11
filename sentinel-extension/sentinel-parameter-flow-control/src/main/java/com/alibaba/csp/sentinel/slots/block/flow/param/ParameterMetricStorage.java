@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
-import com.alibaba.csp.sentinel.support.LettuceSupporter;
+import com.alibaba.csp.sentinel.support.RdSupporter;
 import com.alibaba.csp.sentinel.util.StringUtil;
 
 /**
@@ -36,7 +36,7 @@ public final class ParameterMetricStorage {
     private static final Object LOCK = new Object();
 
     static {
-        LettuceSupporter.initialize();
+        RdSupporter.initialize();
     }
 
     private ParameterMetricStorage() {
