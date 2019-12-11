@@ -7,10 +7,8 @@ package com.alibaba.csp.sentinel.adapter.gateway.common;
  */
 public class PriorityProperties {
 
-    public static final boolean ENABLE = Boolean
-            .parseBoolean(System.getProperty("rap-cloud-gateway.priority.enabled", "true"));
-    public static final String RESOURCE_SUFFIX = System.getProperty("rap-cloud-gateway.priority.resource_suffix", "$");
-    public static final String HEADER = System.getProperty("rap-cloud-gateway.priority.header", "RAP");
-    public static final String HEADER_VALUE = System.getProperty("rap-cloud-gateway.priority.header_value", "fulge");
-    public static final String GATEWAY_DEFAULT_PRIORITY_PARAM = "$P";
+    public static final boolean ENABLE = Boolean.parseBoolean(System.getProperty("rap.gateway.flow.enabled", "true"));
+    public static final String RESOURCE_VIP_SUFFIX = System.getProperty("rap.gateway.flow.vip.suffix", "!");
+    public static final String VIP_HEADER = System.getProperty("rap.gateway.flow.vip.header", "X-GATEWAY-FLOW-VIP");
+    public static final String GATEWAY_VIP_PARAM = "$!VIP";
 }

@@ -65,8 +65,8 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             ParameterMetricStorage.initParamMetricsFor(resourceWrapper, rule);
 
             if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
-                // 优先级启用且存在备用规则标记
-                if (loadReserve(resourceWrapper, count, rule, args)) {
+                // 升级为VIP规则，如果校验通过直接退出
+                if (upgradeVipRules(resourceWrapper, count, args)) {
                     return;
                 }
                 String triggeredParam = "";
@@ -79,27 +79,29 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         }
     }
 
-    private boolean loadReserve(ResourceWrapper resourceWrapper, int count, ParamFlowRule rule, Object[] args)
+    private boolean upgradeVipRules(ResourceWrapper resourceWrapper, int count, Object[] args)
             throws ParamFlowException {
-        if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_SUFFIX.equals(args[args.length - 1])) {
-            // 启用备用规则
-            StringResourceWrapper reserveRs = new StringResourceWrapper(
-                    resourceWrapper.getName() + PriorityProperties.RESOURCE_SUFFIX, resourceWrapper.getEntryType());
-            RecordLog.info("Switch to reserve rules, StringResourceWrapper=[{}]", reserveRs);
-            List<ParamFlowRule> reserveRules = GatewayRuleManager.getConvertedParamRules(reserveRs.getName());
-            if (reserveRules == null || reserveRules.isEmpty()) {
-                throw new RuntimeException("Reserve rules can not be empty");
+        if (PriorityProperties.ENABLE && PriorityProperties.GATEWAY_VIP_PARAM.equals(args[args.length - 1])) {
+            // 启用VIP资源规则
+            StringResourceWrapper vipResource = new StringResourceWrapper(
+                    resourceWrapper.getName() + PriorityProperties.RESOURCE_VIP_SUFFIX, resourceWrapper.getEntryType());
+            List<ParamFlowRule> vipRules = GatewayRuleManager.getConvertedParamRules(vipResource.getName());
+            if (vipRules == null || vipRules.isEmpty()) {
+                RecordLog.warn("VIP rules can not be empty, vipResource=" + vipResource.toString());
+                return false;
+            } else {
+                RecordLog.info("Switch to VIP rules, vipResource=" + vipResource.toString());
             }
-            for (ParamFlowRule rRule : reserveRules) {
-                ParameterMetricStorage.initParamMetricsFor(reserveRs, rRule);
+            for (ParamFlowRule vipRule : vipRules) {
+                ParameterMetricStorage.initParamMetricsFor(vipResource, vipRule);
                 // 根据备用规则和正常规则校验方式一致，所以公用args参数
-                if (!ParamFlowChecker.passCheck(reserveRs, rRule, count, args)) {
+                if (!ParamFlowChecker.passCheck(vipResource, vipRule, count, args)) {
                     String triggeredParam = "";
-                    if (args.length > rule.getParamIdx()) {
-                        Object value = args[rule.getParamIdx()];
+                    if (args.length > vipRule.getParamIdx()) {
+                        Object value = args[vipRule.getParamIdx()];
                         triggeredParam = String.valueOf(value);
                     }
-                    throw new ParamFlowException(resourceWrapper.getName(), triggeredParam, rule);
+                    throw new ParamFlowException(vipResource.getName(), triggeredParam, vipRule);
                 }
             }
             return true;
