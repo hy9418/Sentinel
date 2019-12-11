@@ -81,7 +81,7 @@ public class GatewayFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     private boolean upgradeVipRules(ResourceWrapper resourceWrapper, int count, Object[] args)
             throws ParamFlowException {
-        if (PriorityProperties.ENABLE && PriorityProperties.RESOURCE_VIP_SUFFIX.equals(args[args.length - 1])) {
+        if (PriorityProperties.ENABLE && PriorityProperties.GATEWAY_VIP_PARAM.equals(args[args.length - 1])) {
             // 启用VIP资源规则
             StringResourceWrapper vipResource = new StringResourceWrapper(
                     resourceWrapper.getName() + PriorityProperties.RESOURCE_VIP_SUFFIX, resourceWrapper.getEntryType());
