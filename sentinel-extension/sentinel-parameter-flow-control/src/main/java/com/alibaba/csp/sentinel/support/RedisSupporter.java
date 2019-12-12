@@ -22,8 +22,6 @@ public class RedisSupporter {
     private static final String REDIS_SERVER = "rap.redis.server";
     private static final String REDIS_AUTH = "rap.redis.auth.password";
     private static final String AHAS_NAMESPACE = "ahas.namespace";
-    private static final String PROJECT_NAME = "project.name";
-    private static final String DEFAULT_PROJECT_NAME_GATEWAY = AppNameUtil.getAppName();
     private static final String RAP_PROFILE = "rap.profile";
     private static final Map<String, CommandResource> COMMANDS_CACHE = new HashMap<>();
     private static final String REDIS_PROTOCOL = "redis://";
@@ -60,7 +58,7 @@ public class RedisSupporter {
         if (namespace != null && !namespace.isEmpty()) {
             prefix += namespace + ':';
         }
-        String projectName = System.getProperty(PROJECT_NAME, DEFAULT_PROJECT_NAME_GATEWAY);
+        String projectName = AppNameUtil.getAppName();
         if (!projectName.isEmpty()) {
             prefix += projectName + ':';
         }
