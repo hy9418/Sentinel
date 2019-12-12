@@ -64,6 +64,7 @@
         <maven.jacoco.version>0.8.3</maven.jacoco.version>
         <maven.jar.version>3.1.0</maven.jar.version>
         <maven.pmd.version>3.8</maven.pmd.version>
+        <sentinel.version>1.6.3</sentinel.version>
     </properties>
 
     <modules>
@@ -77,73 +78,84 @@
         <module>sentinel-benchmark</module>
         <module>sentinel-cluster</module>
     </modules>
-
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <name>Project Repository - Releases</name>
+            <url>${deploy.releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <name>Project Repository - Snapshots</name>
+            <url>${deploy.snapshots.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-core</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-extension</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-annotation-aspectj</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-parameter-flow-control</artifactId>
-                <version>${project.version}</version>
+                <version>1.6.3-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-datasource-extension</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-datasource-nacos</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-datasource-zookeeper</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-datasource-apollo</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-transport-simple-http</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-transport-netty-http</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-transport-common</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-cluster-common-default</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-adapter</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
 
             <dependency>

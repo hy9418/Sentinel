@@ -9,6 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <version>1.6.3-SNAPSHOT</version>
     <artifactId>sentinel-parameter-flow-control-rap</artifactId>
     <packaging>jar</packaging>
     <build>
