@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.alibaba.csp.sentinel.util.AppNameUtil;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -22,7 +23,7 @@ public class RedisSupporter {
     private static final String REDIS_AUTH = "rap.redis.auth.password";
     private static final String AHAS_NAMESPACE = "ahas.namespace";
     private static final String PROJECT_NAME = "project.name";
-    private static final String DEFAULT_PROJECT_NAME_GATEWAY = "rap-cloud-gateway";
+    private static final String DEFAULT_PROJECT_NAME_GATEWAY = AppNameUtil.getAppName();
     private static final String RAP_PROFILE = "rap.profile";
     private static final Map<String, CommandResource> COMMANDS_CACHE = new HashMap<>();
     private static final String REDIS_PROTOCOL = "redis://";
