@@ -17,7 +17,7 @@ import org.redisson.misc.URIBuilder;
  */
 public class RedisSupporter {
 
-    private static final String REDIS_COMMAND_PREFIX = "rap-cloud-gateway:";
+    private static final String REDIS_COMMAND_PATH_PREFIX = "rap:gateway";
     private static final String REDIS_SERVER = "rap.redis.server";
     private static final String REDIS_AUTH = "rap.redis.auth.password";
     private static final String AHAS_NAMESPACE = "ahas.namespace";
@@ -54,7 +54,7 @@ public class RedisSupporter {
     }
 
     private static void prefix() {
-        String prefix = REDIS_COMMAND_PREFIX;
+        String prefix = REDIS_COMMAND_PATH_PREFIX;
         String namespace = System.getProperty(AHAS_NAMESPACE, System.getProperty(RAP_PROFILE));
         if (namespace != null && !namespace.isEmpty()) {
             prefix += namespace + ':';
@@ -70,8 +70,7 @@ public class RedisSupporter {
         if (init.compareAndSet(false, true)) {
             String server = System.getProperty(REDIS_SERVER);
             if (server == null || "".equals(server) || !server.contains(":")) {
-                throw new IllegalArgumentException(
-                        "Redis server [rap.redis.server] not set. Format - <host>:<port>");
+                throw new IllegalArgumentException("Redis server [rap.redis.server] not set. Format - <host>:<port>");
             }
             String password = System.getProperty(REDIS_AUTH);
             Config config = new Config();

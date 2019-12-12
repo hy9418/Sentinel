@@ -17,9 +17,7 @@ import org.redisson.codec.JsonJacksonCodec;
  */
 public class CommandResource {
 
-    private static final String PUT_IF_ABSENT =
-            "if (redis.call('SETNX',KEYS[1],ARGV[1]) == 1) then\nreturn nil\nend\nreturn redis"
-                    + ".call('GET',KEYS[1])";
+    private static final String PUT_IF_ABSENT = "if (redis.call('SETNX',KEYS[1],ARGV[1]) == 1) then\nreturn nil\nend\nreturn redis.call('GET',KEYS[1])";
     private static final Codec JSON_JACKSON_CODEC = new JsonJacksonCodec();
     private final String prefix;
     private final String pattern;
@@ -52,8 +50,7 @@ public class CommandResource {
     }
 
     public <T, R> boolean set(T key, R value) {
-        RBucket<Object> bucket =
-                redissonClient.getBucket(prefix + key.toString(), JSON_JACKSON_CODEC);
+        RBucket<Object> bucket = redissonClient.getBucket(prefix + key.toString(), JSON_JACKSON_CODEC);
         bucket.set(value);
         return true;
     }
@@ -65,9 +62,8 @@ public class CommandResource {
 
     public <T, R> R putIfAbsent(T key, R value) {
         return redissonClient.getScript()
-                .eval(RScript.Mode.READ_WRITE, JSON_JACKSON_CODEC, PUT_IF_ABSENT,
-                        RScript.ReturnType.VALUE,
-                        Collections.singletonList(prefix + key.toString()), value);
+                .eval(RScript.Mode.READ_WRITE, JSON_JACKSON_CODEC, PUT_IF_ABSENT, RScript.ReturnType.VALUE, Collections.singletonList(prefix + key.toString()),
+                        value);
     }
 
     public long size() {
