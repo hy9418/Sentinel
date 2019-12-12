@@ -109,8 +109,8 @@
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
-                <artifactId>sentinel-parameter-flow-control</artifactId>
-                <version>1.6.3-SNAPSHOT</version>
+                <artifactId>sentinel-parameter-flow-control-rap</artifactId>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
