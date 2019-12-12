@@ -31,27 +31,27 @@
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-core</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-extension</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-web-servlet</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-reactor-adapter</artifactId>
-                <version>${project.version}</version>
+                <version>${sentinel.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.csp</groupId>
-                <artifactId>sentinel-api-gateway-adapter-common</artifactId>
-                <version>${project.version}</version>
+                <artifactId>sentinel-api-gateway-adapter-common-rap</artifactId>
+                <version>${sentinel.version}</version>
             </dependency>
 
             <dependency>
