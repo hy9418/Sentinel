@@ -17,7 +17,7 @@ import org.redisson.misc.URIBuilder;
  */
 public class RedisSupporter {
 
-    private static final String REDIS_COMMAND_PATH_PREFIX = "rap:gateway";
+    private static final String REDIS_COMMAND_PATH_PREFIX = "rap:gateway:";
     private static final String REDIS_SERVER = "rap.redis.server";
     private static final String REDIS_AUTH = "rap.redis.auth.password";
     private static final String AHAS_NAMESPACE = "ahas.namespace";
